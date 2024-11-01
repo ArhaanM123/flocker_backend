@@ -1,6 +1,11 @@
 import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Initialize SQLAlchemy without an app context
+db = SQLAlchemy()
 
 class Config:
     """Base configuration."""
@@ -26,9 +31,25 @@ class ProductionConfig(Config):
     TESTING = False
 
 # Configuration dictionary for easy access
-config = {
+configurations = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
+
+def create_app(config_name='default'):
+    """App factory function to initialize the app with a configuration."""
+    app = Flask(__name__)
+    app.config.from_object(configurations[config_name])
+
+    # Initialize SQLAlchemy with app context
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()  # Create tables if they don't exist
+
+    return app
+
+# Create an app instance with the default configuration
+app = create_app()
